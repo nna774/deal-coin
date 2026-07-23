@@ -30,6 +30,8 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  overflow: hidden; /* ページ全体はスクロールさせない */
   background: var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
@@ -39,11 +41,13 @@ html, body {
 #app {
   max-width: 720px;
   margin: 0 auto;
-  padding: 12px 12px 24px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  min-height: 100vh;
+  gap: 8px;
+  height: 100vh;
+  height: 100dvh; /* モバイルのアドレスバー分を考慮 */
+  box-sizing: border-box;
 }
 
 #topbar {
@@ -76,27 +80,29 @@ html, body {
 .stat .label { font-size: 0.65rem; color: var(--muted); }
 .stat .value { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Board */
+/* Board — ビューポート内に収まるよう、セル・スロットは可変サイズ */
 #board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
-  gap: 10px;
+  display: flex;               /* 全セルを1行に並べ、はみ出さないよう各セルを縮める */
+  gap: 6px;
   background: var(--panel);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 8px;
   box-shadow: var(--shadow);
-  flex: 1;
-  align-content: start;
+  flex: 1 1 auto;
+  min-height: 0;               /* 中身より小さくなれるように（縮小許可） */
 }
 
 .cell {
+  flex: 1 1 0;                 /* セル幅は均等・可変 */
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column-reverse; /* index 0 at bottom, top of stack at top */
-  gap: 3px;
+  gap: 2px;
   background: var(--panel-2);
   border: 2px solid transparent;
   border-radius: 10px;
-  padding: 5px;
+  padding: 4px;
   cursor: pointer;
   transition: border-color 0.12s, transform 0.08s;
 }
@@ -107,7 +113,8 @@ html, body {
 .cell.invalid { border-color: var(--danger); }
 
 .slot {
-  height: 26px;
+  flex: 1 1 0;                 /* 10スロットで高さを均等分割（縦にも収まる） */
+  min-height: 0;
   border-radius: 50%;
   background: var(--slot-empty);
   display: flex;
@@ -122,7 +129,7 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8rem;
+  font-size: clamp(0.5rem, 2.2vw, 0.9rem);
   font-weight: 800;
   color: #12151d;
   box-shadow: inset 0 -3px 5px rgba(0, 0, 0, 0.28), inset 0 2px 3px rgba(255, 255, 255, 0.4);
