@@ -97,8 +97,9 @@ html, body {
   border-radius: var(--radius);
   padding: 8px;                /* = BOARD_PAD in game.js */
   box-shadow: var(--shadow);
-  /* 列数(grid-template-columns)と実寸(width/height)は game.js の
-     sizeBoard() が、コインが真円(スロットが正方形)になるよう計算して設定する。 */
+  width: 100%;                 /* 横幅はいっぱいに使う */
+  /* 列数(grid-template-columns)と高さは game.js の sizeBoard() が設定する。
+     コイン幅はフル幅で決まり、高さは幅を超えない範囲で縦に詰める（横長は可・縦長は不可）。 */
 }
 
 .cell {

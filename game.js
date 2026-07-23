@@ -344,7 +344,8 @@ function render() {
 
 // 盤面サイズを計算して #board に設定する。
 // 列数は最大 MAX_COLS、超えた分は段（行）を増やす。
-// スロットが正方形＝コインが真円になるコイン径 c を、利用可能領域から逆算する。
+// 幅は常にフル（横幅いっぱい）。コインの高さは幅を超えない範囲で縦の空きを詰める
+// （＝横長は許容、縦長にはしない。高さが余ればコインは真円で上下に余白）。
 function sizeBoard() {
   const board = $('board');
   const wrap = board.parentElement; // #board-wrap（padding 無し）
@@ -357,22 +358,18 @@ function sizeBoard() {
   const availH = wrap.clientHeight;
   if (availW <= 0 || availH <= 0) return;
 
-  // cellW = c + 2*CELL_PAD, cellH = 10*c + 9*CELL_GAP + 2*CELL_PAD
-  // boardW = cols*cellW + (cols-1)*BOARD_GAP + 2*BOARD_PAD  <= availW
-  // boardH = rows*cellH + (rows-1)*BOARD_GAP + 2*BOARD_PAD  <= availH
-  const cFromW = (availW - 2 * BOARD_PAD - (cols - 1) * BOARD_GAP - cols * 2 * CELL_PAD) / cols;
-  const perRowFixed = (SLOTS_PER_CELL - 1) * CELL_GAP + 2 * CELL_PAD; // 1セルの高さのうち c 非依存分
-  const cFromH = (availH - 2 * BOARD_PAD - (rows - 1) * BOARD_GAP - rows * perRowFixed) / (rows * SLOTS_PER_CELL);
-  const c = Math.max(8, Math.floor(Math.min(cFromW, cFromH)));
+  const perRowFixed = (SLOTS_PER_CELL - 1) * CELL_GAP + 2 * CELL_PAD; // 1セルの高さのうちコイン高さ非依存分
+  // コイン幅：フル幅を列数で割った値（1fr 相当）
+  const coinW = (availW - 2 * BOARD_PAD - (cols - 1) * BOARD_GAP - cols * 2 * CELL_PAD) / cols;
+  // コイン高さ：高さいっぱいに詰めた値。ただしコイン幅を超えない（縦長にしない）
+  const coinHFill = (availH - 2 * BOARD_PAD - (rows - 1) * BOARD_GAP - rows * perRowFixed) / (rows * SLOTS_PER_CELL);
+  const coinH = Math.max(8, Math.floor(Math.min(coinW, coinHFill)));
 
-  const cellW = c + 2 * CELL_PAD;
-  const cellH = SLOTS_PER_CELL * c + perRowFixed;
-  const boardW = cols * cellW + (cols - 1) * BOARD_GAP + 2 * BOARD_PAD;
+  const cellH = SLOTS_PER_CELL * coinH + perRowFixed;
   const boardH = rows * cellH + (rows - 1) * BOARD_GAP + 2 * BOARD_PAD;
 
   board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  board.style.width = boardW + 'px';
-  board.style.height = boardH + 'px';
+  board.style.height = boardH + 'px'; // 幅は CSS の width:100% に任せる
 }
 
 // 盤面を1行の文字列で表す。各 [...] は 1セル、左が底(index0)・右がトップ(手前)。
