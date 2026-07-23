@@ -254,20 +254,33 @@ function deal() {
   const ceil = state.maxCoin - 1;
   if (ceil < floor) { message('配れる数字が無い'); return; }
 
-  // 純粋ランダム: 各数字にランダムな枚数、制約内でランダム配置。詰み回避はしない。
-  const counts = {};
-  let sum = 0;
-  for (let t = floor; t <= ceil; t++) { counts[t] = randInt(DEAL_COUNT_MIN, DEAL_COUNT_MAX); sum += counts[t]; }
-  if (sum === 0) counts[randInt(floor, ceil)] = randInt(1, DEAL_COUNT_MAX);
-
   const beforeLen = state.cells.map((c) => c.length);
-  placeDeal(state.cells, counts);
-  const placedAny = state.cells.some((c, i) => c.length > beforeLen[i]);
-  if (!placedAny) {
-    // 全セル満杯などで置けない。詰みかどうかを表示する。
+  const placedAny = (cells) => cells.some((c, i) => c.length > beforeLen[i]);
+  const rollCounts = () => {
+    const counts = {};
+    let sum = 0;
+    for (let t = floor; t <= ceil; t++) { counts[t] = randInt(DEAL_COUNT_MIN, DEAL_COUNT_MAX); sum += counts[t]; }
+    if (sum === 0) counts[randInt(floor, ceil)] = randInt(1, DEAL_COUNT_MAX);
+    return counts;
+  };
+
+  // 基本ランダム。ただし「配った後に合法手が生まれない配り（全 top が相異なり空セルも無い）」は
+  // 避ける方向に再抽選する。空きがある限り hasLegalMove な配りを選び、埋まってきて無理なら諦める。
+  let chosen = null, fallback = null;
+  const ATTEMPTS = 30;
+  for (let a = 0; a < ATTEMPTS && !chosen; a++) {
+    const trial = placeDeal(cloneCells(state.cells), rollCounts());
+    if (!placedAny(trial)) continue;
+    if (!fallback) fallback = trial;
+    if (hasLegalMove(resolveMergesPure(trial))) chosen = trial;
+  }
+  const result = chosen || fallback;
+  if (!result) {
+    // 全セル満杯などでどこにも置けない。詰みかどうかを表示する。
     updateStatusMessage();
     return;
   }
+  state.cells = result;
 
   // 新しく積まれたコインの位置を記録（降ってくる演出用）
   droppedCoins.clear();
