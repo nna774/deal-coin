@@ -391,6 +391,7 @@ function init() {
 
   $('deal-btn').addEventListener('click', deal);
   $('new-btn').addEventListener('click', () => {
+    if (!window.confirm('最初からやり直す？ 今の盤面とスコアは消えるぞ')) return;
     newGame();
     message('');
     saveState();
