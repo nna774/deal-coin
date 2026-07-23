@@ -163,57 +163,6 @@ function resolveMergesPure(cells) {
   return out;
 }
 
-// 移動だけで（ディール無しで）いずれかのマージを完成できるか。有界DFS。
-// 必要条件: あるティアが盤上に10枚以上ある。
-function mergeReachable(cells) {
-  const cnt = {};
-  for (const c of cells) for (const v of c) cnt[v] = (cnt[v] || 0) + 1;
-  if (!Object.values(cnt).some((n) => n >= SLOTS_PER_CELL)) return false;
-  const seen = new Set();
-  const stack = [cloneCells(cells)];
-  let budget = 4000;
-  while (stack.length && budget-- > 0) {
-    const cur = stack.pop();
-    const key = cur.map((c) => c.join('.')).join('|');
-    if (seen.has(key)) continue;
-    seen.add(key);
-    for (let s = 0; s < cur.length; s++) {
-      if (cur[s].length === 0) continue;
-      const tier = cur[s][cur[s].length - 1];
-      for (let d = 0; d < cur.length; d++) {
-        const amount = computeMove(cur, s, d);
-        if (amount <= 0) continue;
-        const nx = cloneCells(cur);
-        for (let i = 0; i < amount; i++) nx[s].pop();
-        for (let i = 0; i < amount; i++) nx[d].push(tier);
-        for (const c of nx) if (c.length === SLOTS_PER_CELL && c.every((v) => v === c[0])) return true;
-        stack.push(nx);
-      }
-    }
-  }
-  return false;
-}
-
-// この盤面はまだ進行できるか（詰み/不毛でないか）。
-//   - 合法手がある（今すぐ動かせる）→ OK
-//   - 移動でマージ到達可能 → OK
-//   - 配りで進展できる余地がある → OK
-//       ・空セルがある（配れる数字を撒いて育てられる）
-//       ・「配れる数字だけで構成された(=丸ごと同一の)セル」に空きがある（10個まで伸ばせる）
-//   いずれも無ければ「詰み/不毛」。
-function canProgress(cells, floor, ceil) {
-  if (ceil < floor) return hasLegalMove(cells) || mergeReachable(cells);
-  if (hasLegalMove(cells)) return true;
-  if (mergeReachable(cells)) return true;
-  for (const cell of cells) {
-    if (freeSlots(cell) <= 0) continue;
-    if (cell.length === 0) return true; // 空セルに配って育てられる
-    // 混在セルはそれ以上マージへ育たない。丸ごと同一かつ配れる数字なら伸ばせる。
-    if (cell.every((v) => v === cell[0]) && cell[0] >= floor && cell[0] <= ceil) return true;
-  }
-  return false;
-}
-
 // counts を配置する。cells を破壊的に変更して返す。
 // ルール（これだけ）:
 //   - 1バッチ = 1つの数字を数枚まとめて配る。
@@ -238,11 +187,13 @@ function placeDeal(cells, counts) {
   return cells;
 }
 
-// 盤面が詰み（進行不能）なら詰み表示、そうでなければメッセージを消す。
+// 詰み = 盤面が全て埋まった（空きスロットが1つも無い）時だけ。
+function isFull() {
+  return state.cells.every((c) => c.length >= SLOTS_PER_CELL);
+}
+
 function updateStatusMessage() {
-  const floor = dealFloorFn(state.maxCoin, state.cells.length);
-  const ceil = state.maxCoin - 1;
-  if (!canProgress(state.cells, floor, ceil)) {
+  if (isFull()) {
     message('詰みだ……「はじめから」でやり直せ');
   } else {
     message('');
