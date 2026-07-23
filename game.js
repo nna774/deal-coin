@@ -3,7 +3,7 @@
 /* ===== 調整可能な定数 ===== */
 const SLOTS_PER_CELL = 10;
 const MAX_CELLS      = 12;
-const START_MAX_COIN = 2;                 // 初期 maxCoin（→ 初期セル数 3）
+const START_MAX_COIN = 2;                 // 初期 maxCoin（cellCount=maxCoin+2 → 初期セル数 4）
 const INITIAL_COINS  = { 0: 6, 1: 4 };    // 初期配置枚数（tier: 枚数）。空セルを残して手詰まりを避ける
 const DEAL_COUNT_MIN = 0;
 const DEAL_COUNT_MAX = 5;                 // 各ティアの配布枚数上限
@@ -32,7 +32,7 @@ const $ = (id) => document.getElementById(id);
 const randInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
 const cloneCells = (cells) => cells.map((c) => c.slice());
 const freeSlots = (cell) => SLOTS_PER_CELL - cell.length;
-const cellCount = () => Math.min(MAX_CELLS, state.maxCoin + 1);
+const cellCount = () => Math.min(MAX_CELLS, state.maxCoin + 2);
 const coinValue = (tier) => Math.round(2 * Math.pow(5, tier)); // マージ加点用
 
 function topRun(cell) {
@@ -52,7 +52,7 @@ function coinColor(tier) {
 function newGame() {
   state.maxCoin = START_MAX_COIN;
   state.score = 0;
-  const n = Math.min(MAX_CELLS, START_MAX_COIN + 1);
+  const n = Math.min(MAX_CELLS, START_MAX_COIN + 2);
   state.cells = Array.from({ length: n }, () => []);
   // 初期コインも「1セル1数字」で配置（placeDeal と同じ規則）
   placeDeal(state.cells, { ...INITIAL_COINS });
