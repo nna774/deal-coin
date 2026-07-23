@@ -13,6 +13,14 @@ function dealFloorFn(maxCoin, cellCount) {
   return Math.max(0, maxCoin - cellCount);
 }
 
+const MAX_COLS = 6;                       // 横は最大6列。超えたら段を増やす（2段目へ折り返す）
+
+// レイアウト定数（style.css と一致させること）
+const BOARD_PAD = 8;   // #board の padding
+const BOARD_GAP = 6;   // #board のセル間 gap
+const CELL_PAD  = 4;   // .cell の padding
+const CELL_GAP  = 2;   // .cell のスロット間 gap
+
 const STORAGE_KEY = 'dealcoin.state.v1';
 const HS_KEY = 'dealcoin.highscore.v1';
 
@@ -330,7 +338,41 @@ function render() {
   $('maxcoin').textContent = state.maxCoin;
   $('highscore').textContent = state.highScore.toLocaleString();
 
+  sizeBoard();
   console.log(boardString()); // 盤面を文字列で出力（共有用）
+}
+
+// 盤面サイズを計算して #board に設定する。
+// 列数は最大 MAX_COLS、超えた分は段（行）を増やす。
+// スロットが正方形＝コインが真円になるコイン径 c を、利用可能領域から逆算する。
+function sizeBoard() {
+  const board = $('board');
+  const wrap = board.parentElement; // #board-wrap（padding 無し）
+  const n = state.cells.length;
+  if (n === 0) return;
+  const cols = Math.min(n, MAX_COLS);
+  const rows = Math.ceil(n / cols);
+
+  const availW = wrap.clientWidth;
+  const availH = wrap.clientHeight;
+  if (availW <= 0 || availH <= 0) return;
+
+  // cellW = c + 2*CELL_PAD, cellH = 10*c + 9*CELL_GAP + 2*CELL_PAD
+  // boardW = cols*cellW + (cols-1)*BOARD_GAP + 2*BOARD_PAD  <= availW
+  // boardH = rows*cellH + (rows-1)*BOARD_GAP + 2*BOARD_PAD  <= availH
+  const cFromW = (availW - 2 * BOARD_PAD - (cols - 1) * BOARD_GAP - cols * 2 * CELL_PAD) / cols;
+  const perRowFixed = (SLOTS_PER_CELL - 1) * CELL_GAP + 2 * CELL_PAD; // 1セルの高さのうち c 非依存分
+  const cFromH = (availH - 2 * BOARD_PAD - (rows - 1) * BOARD_GAP - rows * perRowFixed) / (rows * SLOTS_PER_CELL);
+  const c = Math.max(8, Math.floor(Math.min(cFromW, cFromH)));
+
+  const cellW = c + 2 * CELL_PAD;
+  const cellH = SLOTS_PER_CELL * c + perRowFixed;
+  const boardW = cols * cellW + (cols - 1) * BOARD_GAP + 2 * BOARD_PAD;
+  const boardH = rows * cellH + (rows - 1) * BOARD_GAP + 2 * BOARD_PAD;
+
+  board.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  board.style.width = boardW + 'px';
+  board.style.height = boardH + 'px';
 }
 
 // 盤面を1行の文字列で表す。各 [...] は 1セル、左が底(index0)・右がトップ(手前)。
@@ -398,6 +440,7 @@ function init() {
     render();
   });
 
+  window.addEventListener('resize', sizeBoard);
   render();
 }
 

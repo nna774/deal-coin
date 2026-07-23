@@ -80,16 +80,25 @@ html, body {
 .stat .label { font-size: 0.65rem; color: var(--muted); }
 .stat .value { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 
-/* Board — ビューポート内に収まるよう、セル・スロットは可変サイズ */
-#board {
-  display: flex;               /* 全セルを1行に並べ、はみ出さないよう各セルを縮める */
-  gap: 6px;
-  background: var(--panel);
-  border-radius: var(--radius);
-  padding: 8px;
-  box-shadow: var(--shadow);
+/* Board — 余った領域の中央に、縦横比 列数:10 を保って最大サイズで収める */
+#board-wrap {
   flex: 1 1 auto;
   min-height: 0;               /* 中身より小さくなれるように（縮小許可） */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#board {
+  display: grid;               /* 最大6列。7列以上は2段に折り返す */
+  grid-auto-rows: 1fr;         /* 各段の高さを均等に */
+  gap: 6px;                    /* = BOARD_GAP in game.js */
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 8px;                /* = BOARD_PAD in game.js */
+  box-shadow: var(--shadow);
+  /* 列数(grid-template-columns)と実寸(width/height)は game.js の
+     sizeBoard() が、コインが真円(スロットが正方形)になるよう計算して設定する。 */
 }
 
 .cell {
