@@ -378,6 +378,14 @@ function render() {
   $('score').textContent = state.score.toLocaleString();
   $('maxcoin').textContent = state.maxCoin;
   $('highscore').textContent = state.highScore.toLocaleString();
+
+  console.log(boardString()); // 盤面を文字列で出力（共有用）
+}
+
+// 盤面を1行の文字列で表す。各 [...] は 1セル、左が底(index0)・右がトップ(手前)。
+function boardString() {
+  const cells = state.cells.map((c) => `[${c.join(',')}]`).join(' ');
+  return `max=${state.maxCoin} score=${state.score} :: ${cells}`;
 }
 
 function message(text) {
